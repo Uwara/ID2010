@@ -12,41 +12,47 @@ import java.rmi.RemoteException;
  * This interface is implemented by the ChatServer, and is used by ChatClient
  * to place requests. It must therefore be known to both implementations.
  */
-public interface ChatServerInterface
-  extends
-    java.rmi.Remote
+public interface ChatServerInterface extends Remote
 {
   /**
    * Used by ChatClient instances to inject a text message to be
-   * distributed to registered ChatClientNotificationInterfaces.
-   * @param msg The message.
+   * distributed to registered RemoteEventListeners.
+   * The sender's RMI identity is captured by the server for echo cancellation.
+   * @param sender The RemoteEventListener stub of the client sending the message.
+   * @param msg The message text.
    */
-  public void say (RemoteEventListener sender, String msg) throws java.rmi.RemoteException;
+  public void say(RemoteEventListener sender, String msg) 
+    throws RemoteException;
 
   /**
    * Returns the server's user-friendly name.
    * @return The server's user-friendly name.
    */
-  public String getName () throws java.rmi.RemoteException;
+  public String getName() 
+    throws RemoteException;
 
   /**
    * Used by ChatClient instances to register themselves as receivers of
    * remote notifications.
-   * @param rel An object that implements net.jini.core.event.RemoteEvent
-   *            interface.
+   * @param rel An object that implements RemoteEventListener interface.
    */
-  public void register (RemoteEventListener rel)
-    throws java.rmi.RemoteException;
+  public void register(RemoteEventListener rel)
+    throws RemoteException;
 
   /**
    * Used by ChatClient instances to unregister themselves as receivers of
    * remote notifications.
-   * @param rel An object that implements net.jini.core.event.RemoteEvent
-   *            interface. This should be the same object as was originally
-   *            used to register.
+   * @param rel An object that implements RemoteEventListener interface. 
+   *            This should be the same object as was originally used to register.
    */
-  public void unregister (RemoteEventListener rel)
-    throws java.rmi.RemoteException;
+  public void unregister(RemoteEventListener rel)
+    throws RemoteException;
 
-    public boolean ping() throws java.rmi.RemoteException;
+  /**
+   * Simple connectivity test for the server. Used by clients to verify 
+   * the server is responsive before attempting full operations.
+   * @return true if server is responding.
+   */
+  public boolean ping() 
+    throws RemoteException;
 }

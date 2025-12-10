@@ -125,9 +125,9 @@ public class ChatServer
     }
 
     // updated uwara
-    protected void addMessage (RemoteEventListener sender, String msg) {
+    protected void addMessage (RemoteEventListener sender, String senderRmId, String msg) {
         synchronized(msgQueue) {
-            msgQueue.addLast (new MessageWithSender(sender, msg));
+            msgQueue.addLast (new MessageWithSender(sender, senderRmId, msg));
         }
         msgCount++;
         System.out.println ("MSG#" + msgCount + ":" + msg);
@@ -176,11 +176,21 @@ public class ChatServer
 
     // Updated uwara 2024-06 to include sender information
     @Override
-    public void say(RemoteEventListener sender, String msg) throws RemoteException {
-        if (msg != null) {
-            addMessage(sender, msg);
+    public void say(RemoteEventListener sender, String text) 
+            throws RemoteException {
+        if (text != null) {
+            // Get sender's stable session ID
+            String senderSessionId = null;
+            try {
+                senderSessionId = sender.getClientSessionId();
+            } catch (RemoteException e) {
+                senderSessionId = "UNKNOWN";
+            }
+            
+            addMessage(sender, senderSessionId, text);
         }
     }
+
     // added uwara 2024-06
     @Override
     public boolean ping() throws java.rmi.RemoteException {
@@ -244,7 +254,7 @@ public class ChatServer
 
         while (runDelivery) {
 
-            //String msg = getNextMessage();
+            // String msg = getNextMessage();
             // Updated uwara 2024-06 to include sender information
             MessageWithSender msgPair = getNextMessage();
 
@@ -255,7 +265,8 @@ public class ChatServer
                 // New code with sender info
                 ChatNotification note = new ChatNotification(
                     this,
-                    msgPair.sender,  // Pass the sender stub
+                    msgPair.sender,
+                    msgPair.senderId,
                     msgPair.text,
                     msgCount
                 );

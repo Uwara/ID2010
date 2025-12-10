@@ -1,16 +1,12 @@
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
-
+import java.io.InputStreamReader;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Vector;
 
 
 /**
@@ -27,6 +23,46 @@ public class ChatClient
      */
     protected static final String versionString = "fki-8.0";
 
+    public static void main(String[] argv) throws RemoteException {
+        
+        String registryHost = "localhost";
+        int registryPort = 1099;
+        String userName = null;
+        
+        // Parse command line arguments
+        if (argv.length > 0) {
+            registryHost = argv[0];
+        }
+        
+        if (argv.length > 1) {
+            try {
+                registryPort = Integer.parseInt(argv[1]);
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid port number: " + argv[1]);
+                System.err.println("Usage: java ChatClient [host] [port] [username]");
+                System.exit(1);
+            }
+        }
+        
+        if (argv.length > 2) {
+            userName = argv[2];
+        }
+        
+        // Create chat client instance
+        ChatClient cc = new ChatClient();
+        
+        // Set the username (uses provided name or defaults to system property)
+        cc.setName(userName);
+        
+        System.out.println("[Client starting with username: " + cc.myName + "]");
+        
+        // Enter the command read loop
+        cc.readLoop();
+        
+        // Force exit (RMI threads may be lingering)
+        System.exit(0);
+    }
+
     /**
      * Holds the names of found ChatServers.
      */
@@ -42,13 +78,65 @@ public class ChatClient
      */
     protected String myName = null;
 
-    /* *** Constructor *** */
+    protected String clientSessionId;
+
+
+    /**
+     * This array holds the strings of the user command help text.
+     */
+    protected String[] cmdHelp = {
+        "Commands (can be abbreviated):",
+        ".list              List the currently known chat servers",
+        ".name <name>       Set the username presented by the chat client",
+        ".c                 Connect to the default server",
+        ".connect <string>  Connect to a server with a matching string",
+        ".disconnect        Break the connection to the server",
+        ".quit              Exit the client",
+        ".help              This text"
+    };
+
+    /* ***** Interface RemoteEventListener ***** */
 
     /**
      * Creates a new ChatClient instance.
      */
     public ChatClient() throws RemoteException {
+        // Generate stable unique ID for this client session
+        this.clientSessionId = "SESSION_" + System.currentTimeMillis() + 
+                            "_" + (int)(Math.random() * 1000000);
+        System.out.println("[Client Session ID: " + clientSessionId + "]");
+    
         scanForChatServers();
+}
+
+    /* *** ChatClient *** */
+
+    /**
+     * The ChatServer we are registered with (connected to) calls this
+     * method to notify us of a new chat message.
+     *
+     * @param rev The remote event that is the notification.
+     */
+    public void notify(RemoteEvent rev) throws RemoteException {
+        if (rev instanceof ChatNotification) {
+            ChatNotification chat = (ChatNotification) rev;
+            
+            // Echo cancellation: compare session IDs
+            String senderSessionId = chat.getSenderSessionId();
+            
+            if (senderSessionId != null && senderSessionId.equals(this.clientSessionId)) {
+                // This is MY message - suppress it
+                return;
+            }
+
+            System.out.println(chat.getSequenceNumber() + " : " +
+                            chat.getText());
+        }
+    }
+
+    @Override
+    public String getClientSessionId() throws RemoteException {
+        return this.clientSessionId;
     }
 
     /**
@@ -81,33 +169,6 @@ public class ChatClient
             //e.printStackTrace();
         }
     }
-
-    /* ***** Interface RemoteEventListener ***** */
-
-    /**
-     * The ChatServer we are registered with (connected to) calls this
-     * method to notify us of a new chat message.
-     *
-     * @param rev The remote event that is the notification.
-     */
-    public void notify(RemoteEvent rev) throws RemoteException {
-        if (rev instanceof ChatNotification) {
-            ChatNotification chat = (ChatNotification) rev;
-
-            // ECHO CANCELLATION: Check if I sent this message
-            if (chat.getSender() != null &&
-                chat.getSender().equals(this)) {
-                // This is MY message - suppress it silently
-                // (You can add optional diagnostic output here)
-                return;
-            }
-
-            System.out.println(chat.getSequenceNumber() + " : " +
-                chat.getText());
-        }
-    }
-
-    /* *** ChatClient *** */
 
     /**
      * Disconnects this chat client from the current chat server, if
@@ -236,19 +297,14 @@ public class ChatClient
     }
 
     /**
-     * This method implements the send command which is implicit in the
-     * command interpreter (the input line does not start with a period).
-     *
-     * @param text The text to send to the currently connected server.
+     * Sends text to the currently connected chat server.
+     * Prepends the username to the message.
+     * @param text The text to send.
      */
     protected void sendToChat(String text) {
         if (myServer != null) {
             try {
-                //myServer.say(text);
-                // Change from: myServer.say(myName + ": " + text);
-                // To:
-                myServer.say(this, myName + ": " + text);  // Pass 'this' as sender
-
+                myServer.say(this, myName + ": " + text);
             } catch (RemoteException rex) {
                 System.out.println("[Sending to server failed]");
             }
@@ -297,20 +353,6 @@ public class ChatClient
     }
 
     /**
-     * This array holds the strings of the user command help text.
-     */
-    protected String[] cmdHelp = {
-        "Commands (can be abbreviated):",
-        ".list              List the currently known chat servers",
-        ".name <name>       Set the username presented by the chat client",
-        ".c                 Connect to the default server",
-        ".connect <string>  Connect to a server with a matching string",
-        ".disconnect        Break the connection to the server",
-        ".quit              Exit the client",
-        ".help              This text"
-    };
-
-    /**
      * Implements the '.help' user command.
      *
      * @param argv Reserved for future used (e.g. '.help connect').
@@ -321,6 +363,16 @@ public class ChatClient
             System.out.println("[" + cmdHelp[i] + "]");
         }
     }
+
+    // The main method.
+    /* 
+    public static void main(String[] argv) throws RemoteException {
+        ChatClient chatClient = new ChatClient();
+        chatClient.readLoop();
+
+        // For unknown reasons we need to force the exit.
+        System.exit(0);
+    } */
 
     /**
      * Creates a new string which is the concatenation of the elements
@@ -348,6 +400,8 @@ public class ChatClient
         return sb.toString();
     }
 
+    // Added by uwara
+    
     /**
      * The user command interpreter. Commands are read from standard
      * input, parsed and dispatched to methods that either implement
@@ -419,7 +473,9 @@ public class ChatClient
                     System.out.println("[" + verb + ": unknown command]");
                 }
             } else if (0 < arg.length()) {
-                sendToChat(myName + ": " + arg);
+                // Modified uwara
+                // sendToChat(myName + ": " + arg); // prints double name MSG#8:Alice: Alice: Who am I
+                sendToChat(arg);
             }
 
         } // while not halted
@@ -430,15 +486,5 @@ public class ChatClient
 
         System.out.println("[Done]");
 
-    }
-
-    // The main method.
-
-    public static void main(String[] argv) throws RemoteException {
-        ChatClient cc = new ChatClient();
-        cc.readLoop();
-
-        // For unknown reasons we need to force the exit.
-        System.exit(0);
     }
 }

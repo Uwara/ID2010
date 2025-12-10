@@ -20,4 +20,6 @@ public interface RemoteEventListener
    */
   void notify(RemoteEvent theEvent) throws java.rmi.RemoteException;
   
+  // Added by uwara
+  String getClientSessionId() throws java.rmi.RemoteException;
 }
