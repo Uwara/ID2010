@@ -23,46 +23,6 @@ public class ChatClient
      */
     protected static final String versionString = "fki-8.0";
 
-    public static void main(String[] argv) throws RemoteException {
-        
-        String registryHost = "localhost";
-        int registryPort = 1099;
-        String userName = null;
-        
-        // Parse command line arguments
-        if (argv.length > 0) {
-            registryHost = argv[0];
-        }
-        
-        if (argv.length > 1) {
-            try {
-                registryPort = Integer.parseInt(argv[1]);
-            } catch (NumberFormatException e) {
-                System.err.println("Invalid port number: " + argv[1]);
-                System.err.println("Usage: java ChatClient [host] [port] [username]");
-                System.exit(1);
-            }
-        }
-        
-        if (argv.length > 2) {
-            userName = argv[2];
-        }
-        
-        // Create chat client instance
-        ChatClient cc = new ChatClient();
-        
-        // Set the username (uses provided name or defaults to system property)
-        cc.setName(userName);
-        
-        System.out.println("[Client starting with username: " + cc.myName + "]");
-        
-        // Enter the command read loop
-        cc.readLoop();
-        
-        // Force exit (RMI threads may be lingering)
-        System.exit(0);
-    }
-
     /**
      * Holds the names of found ChatServers.
      */
@@ -280,19 +240,22 @@ public class ChatClient
      *
      * @param newName The user's name.
      */
+    /**
+     * Sets the username for this chat client.
+     * If a non-empty name is provided, uses it (after trimming whitespace).
+     * If name is null or empty, generates a random 6-digit identifier.
+     * This ensures every client has a unique name for echo cancellation.
+     * 
+     * @param newName The desired username, or null to generate a random 6-digit ID
+     */
     protected void setName(String newName) {
-
-        myName = newName;
-
-        if (myName != null) {
-            myName = myName.trim();
-            if (myName.length() == 0) {
-                myName = null;
-            }
-        }
-
-        if (myName == null) {
-            myName = System.getProperty("user.name");
+        // If a name is explicitly provided and not empty, use it
+        if (newName != null && !newName.trim().isEmpty()) {
+            myName = newName.trim();
+        } else {
+            // Generate a random 6-digit username as fallback
+            int randomId = (int)(Math.random() * 1000000);
+            myName = String.format("%06d", randomId);
         }
     }
 
@@ -365,14 +328,30 @@ public class ChatClient
     }
 
     // The main method.
-    /* 
+    
     public static void main(String[] argv) throws RemoteException {
+        
+        String userName = null;
+
+        // If a username is provided as argument, use it
+        if (argv.length > 0) {
+            userName = argv[0];
+        } else {
+            // Generate random 6-digit username
+            int randomId = (int)(Math.random() * 1000000);
+            userName = String.format("%06d", randomId);
+        }
+
         ChatClient chatClient = new ChatClient();
+        // Set the username
+        chatClient.setName(userName);
+        
+        System.out.println("[Client starting with username: " + chatClient.myName + "]");
         chatClient.readLoop();
 
         // For unknown reasons we need to force the exit.
         System.exit(0);
-    } */
+    }
 
     /**
      * Creates a new string which is the concatenation of the elements
