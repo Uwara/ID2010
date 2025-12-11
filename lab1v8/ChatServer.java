@@ -126,6 +126,8 @@ public class ChatServer
 
     // updated uwara
     protected void addMessage (RemoteEventListener sender, String senderRmId, String msg) {
+        // Updated by uwara 2025-12 to add sessionID and special class
+        // MessageWithSender
         synchronized(msgQueue) {
             msgQueue.addLast (new MessageWithSender(sender, senderRmId, msg));
         }
@@ -189,12 +191,6 @@ public class ChatServer
             
             addMessage(sender, senderSessionId, text);
         }
-    }
-
-    // added uwara 2024-06
-    @Override
-    public boolean ping() throws java.rmi.RemoteException {
-        return true;
     }
 
     @Override

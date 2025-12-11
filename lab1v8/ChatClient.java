@@ -331,6 +331,7 @@ public class ChatClient
     
     public static void main(String[] argv) throws RemoteException {
         
+        // Added by uwara on 2025-12-10
         String userName = null;
 
         // If a username is provided as argument, use it
@@ -452,8 +453,6 @@ public class ChatClient
                     System.out.println("[" + verb + ": unknown command]");
                 }
             } else if (0 < arg.length()) {
-                // Modified uwara
-                // sendToChat(myName + ": " + arg); // prints double name MSG#8:Alice: Alice: Who am I
                 sendToChat(arg);
             }
 

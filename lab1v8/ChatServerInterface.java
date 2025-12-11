@@ -47,12 +47,4 @@ public interface ChatServerInterface extends Remote
    */
   public void unregister(RemoteEventListener rel)
     throws RemoteException;
-
-  /**
-   * Simple connectivity test for the server. Used by clients to verify 
-   * the server is responsive before attempting full operations.
-   * @return true if server is responding.
-   */
-  public boolean ping() 
-    throws RemoteException;
 }
