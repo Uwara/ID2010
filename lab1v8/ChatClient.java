@@ -12,11 +12,8 @@ import java.util.ArrayList;
 /**
  * This class implements the ChatClient application.
  */
-public class ChatClient
-    extends
-    UnicastRemoteObject        // Since we accept remote calls
-    implements
-    RemoteEventListener        // So we can receive chat notifications
+public class ChatClient extends UnicastRemoteObject        // Since we accept remote calls
+    implements RemoteEventListener        // So we can receive chat notifications
 {
     /**
      * Information string for the user. Printed by the help command.
@@ -44,16 +41,7 @@ public class ChatClient
     /**
      * This array holds the strings of the user command help text.
      */
-    protected String[] cmdHelp = {
-        "Commands (can be abbreviated):",
-        ".list              List the currently known chat servers",
-        ".name <name>       Set the username presented by the chat client",
-        ".c                 Connect to the default server",
-        ".connect <string>  Connect to a server with a matching string",
-        ".disconnect        Break the connection to the server",
-        ".quit              Exit the client",
-        ".help              This text"
-    };
+    protected String[] cmdHelp = {"Commands (can be abbreviated):", ".list              List the currently known chat servers", ".name <name>       Set the username presented by the chat client", ".c                 Connect to the default server", ".connect <string>  Connect to a server with a matching string", ".disconnect        Break the connection to the server", ".quit              Exit the client", ".help              This text"};
 
     /* ***** Interface RemoteEventListener ***** */
 
@@ -62,12 +50,11 @@ public class ChatClient
      */
     public ChatClient() throws RemoteException {
         // Generate stable unique ID for this client session
-        this.clientSessionId = "SESSION_" + System.currentTimeMillis() + 
-                            "_" + (int)(Math.random() * 1000000);
+        this.clientSessionId = "SESSION_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 1000000);
         System.out.println("[Client Session ID: " + clientSessionId + "]");
-    
+
         scanForChatServers();
-}
+    }
 
     /* *** ChatClient *** */
 
@@ -80,17 +67,16 @@ public class ChatClient
     public void notify(RemoteEvent rev) throws RemoteException {
         if (rev instanceof ChatNotification) {
             ChatNotification chat = (ChatNotification) rev;
-            
+
             // Echo cancellation: compare session IDs
             String senderSessionId = chat.getSenderSessionId();
-            
+
             if (senderSessionId != null && senderSessionId.equals(this.clientSessionId)) {
                 // This is MY message - suppress it
                 return;
             }
 
-            System.out.println(chat.getSequenceNumber() + " : " +
-                            chat.getText());
+            System.out.println(chat.getSequenceNumber() + " : " + chat.getText());
         }
     }
 
@@ -119,13 +105,11 @@ public class ChatClient
             servers.clear();
 
             for (String name : serviceNames) {
-                if (name.startsWith("ChatServer"))
-                    servers.add(name);
+                if (name.startsWith("ChatServer")) servers.add(name);
             }
 
         } catch (Exception e) {
-            System.out.printf("[Scanning for servers failed: %s]\n",
-                e.toString());
+            System.out.printf("[Scanning for servers failed: %s]\n", e.toString());
             //e.printStackTrace();
         }
     }
@@ -170,8 +154,7 @@ public class ChatClient
      * @param serviceName The substring to match against the server name.
      */
     protected void connectToChat(String serviceName) {
-        if (servers.isEmpty())
-            scanForChatServers();
+        if (servers.isEmpty()) scanForChatServers();
 
         if (servers.isEmpty()) {
             System.out.println("[There are no known servers]");
@@ -186,12 +169,11 @@ public class ChatClient
         if (serviceName == null || serviceName.isEmpty()) {
             nofMatches = 1;
             selectedServiceName = servers.get(0);
-        } else
-            for (String name : servers)
-                if (name.contains(serviceName)) {
-                    nofMatches++;
-                    selectedServiceName = name;
-                }
+        } else for (String name : servers)
+            if (name.contains(serviceName)) {
+                nofMatches++;
+                selectedServiceName = name;
+            }
 
         if (nofMatches == 0) {
             System.out.printf("[No servers found matching '%s']\n", serviceName);
@@ -245,7 +227,7 @@ public class ChatClient
      * If a non-empty name is provided, uses it (after trimming whitespace).
      * If name is null or empty, generates a random 6-digit identifier.
      * This ensures every client has a unique name for echo cancellation.
-     * 
+     *
      * @param newName The desired username, or null to generate a random 6-digit ID
      */
     protected void setName(String newName) {
@@ -254,7 +236,7 @@ public class ChatClient
             myName = newName.trim();
         } else {
             // Generate a random 6-digit username as fallback
-            int randomId = (int)(Math.random() * 1000000);
+            int randomId = (int) (Math.random() * 1000000);
             myName = String.format("%06d", randomId);
         }
     }
@@ -262,6 +244,7 @@ public class ChatClient
     /**
      * Sends text to the currently connected chat server.
      * Prepends the username to the message.
+     *
      * @param text The text to send.
      */
     protected void sendToChat(String text) {
@@ -302,8 +285,7 @@ public class ChatClient
                             String s = csi.getName();
                             System.out.printf("%s OK]\n", s);
                         } catch (Exception e) {
-                            System.out.printf(" - server not responding: %s]\n",
-                                e.toString());
+                            System.out.printf(" - server not responding: %s]\n", e.toString());
                         }
                     }
                 } catch (Exception e) {
@@ -328,9 +310,9 @@ public class ChatClient
     }
 
     // The main method.
-    
+
     public static void main(String[] argv) throws RemoteException {
-        
+
         // Added by uwara on 2025-12-10
         String userName = null;
 
@@ -339,14 +321,14 @@ public class ChatClient
             userName = argv[0];
         } else {
             // Generate random 6-digit username
-            int randomId = (int)(Math.random() * 1000000);
+            int randomId = (int) (Math.random() * 1000000);
             userName = String.format("%06d", randomId);
         }
 
         ChatClient chatClient = new ChatClient();
         // Set the username
         chatClient.setName(userName);
-        
+
         System.out.println("[Client starting with username: " + chatClient.myName + "]");
         chatClient.readLoop();
 
@@ -381,7 +363,7 @@ public class ChatClient
     }
 
     // Added by uwara
-    
+
     /**
      * The user command interpreter. Commands are read from standard
      * input, parsed and dispatched to methods that either implement

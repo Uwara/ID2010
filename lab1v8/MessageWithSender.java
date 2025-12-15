@@ -6,7 +6,7 @@ public class MessageWithSender {
     public RemoteEventListener sender;
     public String senderId;
     public String text;
-    
+
     public MessageWithSender(RemoteEventListener sender, String senderId, String text) {
         this.sender = sender;
         this.senderId = senderId;

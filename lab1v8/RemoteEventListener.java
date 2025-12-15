@@ -6,20 +6,18 @@
  * system. This was done because the client and the server needed
  * something similar anyway, and were already using
  * RemoveEventListener.
- *
+ * <p>
  * This interface is implemented by listeners for instances of RemoteEvent.
  */
-public interface RemoteEventListener
-  extends java.rmi.Remote, java.util.EventListener
-{
+public interface RemoteEventListener extends java.rmi.Remote, java.util.EventListener {
 
-  /**
-   * Called to deliver a RemoteEvent to the listener.
-   *
-   * @param theEvent  The RemoteEvent to deliver.
-   */
-  void notify(RemoteEvent theEvent) throws java.rmi.RemoteException;
-  
-  // Added by uwara
-  String getClientSessionId() throws java.rmi.RemoteException;
+    /**
+     * Called to deliver a RemoteEvent to the listener.
+     *
+     * @param theEvent The RemoteEvent to deliver.
+     */
+    void notify(RemoteEvent theEvent) throws java.rmi.RemoteException;
+
+    // Added by uwara
+    String getClientSessionId() throws java.rmi.RemoteException;
 }

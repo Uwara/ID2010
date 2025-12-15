@@ -12,16 +12,13 @@
 // Standard Java
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
-
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -30,11 +27,8 @@ import java.util.Vector;
  * a simple chat service. It provides service to ChatClient instances
  * which also host the user interface application.
  */
-public class ChatServer
-    extends
-    UnicastRemoteObject        // for Java RMI
-    implements
-    ChatServerInterface,    // for clients
+public class ChatServer extends UnicastRemoteObject        // for Java RMI
+    implements ChatServerInterface,    // for clients
     Runnable            // for the distribution thread.
 {
     /**
@@ -60,8 +54,7 @@ public class ChatServer
      * it anyway. The iterator will not survive the vector being
      * modified.
      */
-    protected Vector<RemoteEventListener> clients =
-        new Vector<RemoteEventListener>();
+    protected Vector<RemoteEventListener> clients = new Vector<RemoteEventListener>();
 
     /**
      * The printed name of this server instance.
@@ -78,10 +71,7 @@ public class ChatServer
      *
      * @param name The identifying name of this server instance.
      */
-    public ChatServer(String name)
-        throws
-        IOException,
-        RemoteException,        // if join doesn't work
+    public ChatServer(String name) throws IOException, RemoteException,        // if join doesn't work
         UnknownHostException    // if we don't know where we are
     {
         // Find out our hostname so that clients can see it in the registration.
@@ -91,17 +81,13 @@ public class ChatServer
         // Make sure the idName contains something useful
 
         String idName = (name == null) ? "" : name.trim();
-        if (idName.isEmpty())
-            idName = System.getProperty("user.name");
+        if (idName.isEmpty()) idName = System.getProperty("user.name");
 
         // Compose the name under which to register
         //
         // ChatServer.fki@KTH-11355.97863746234
 
-        serverName =
-            getClass().getName()
-                + "." + idName + "@" + host
-                + "." + Long.toString(System.currentTimeMillis());
+        serverName = getClass().getName() + "." + idName + "@" + host + "." + Long.toString(System.currentTimeMillis());
 
         // Register with the rmiregistry
 
@@ -119,21 +105,20 @@ public class ChatServer
         try {
             Naming.unbind("///" + serverName);
         } catch (Exception e) {
-            System.out.printf("When unbinding from rmiregistry: %s\n",
-                e.toString());
+            System.out.printf("When unbinding from rmiregistry: %s\n", e.toString());
         }
     }
 
     // updated uwara
-    protected void addMessage (RemoteEventListener sender, String senderRmId, String msg) {
+    protected void addMessage(RemoteEventListener sender, String senderRmId, String msg) {
         // Updated by uwara 2025-12 to add sessionID and special class
         // MessageWithSender
-        synchronized(msgQueue) {
-            msgQueue.addLast (new MessageWithSender(sender, senderRmId, msg));
+        synchronized (msgQueue) {
+            msgQueue.addLast(new MessageWithSender(sender, senderRmId, msg));
         }
         msgCount++;
-        System.out.println ("MSG#" + msgCount + ":" + msg);
-        wakeUp ();
+        System.out.println("MSG#" + msgCount + ":" + msg);
+        wakeUp();
     }
 
     /**
@@ -142,8 +127,7 @@ public class ChatServer
      * @return The next message, or null if the queue is empty.
      */
     protected MessageWithSender getNextMessage() {
-        if (msgQueue.isEmpty())
-            return null;
+        if (msgQueue.isEmpty()) return null;
         else synchronized (msgQueue) {
             return msgQueue.removeFirst();
         }
@@ -178,8 +162,7 @@ public class ChatServer
 
     // Updated uwara 2024-06 to include sender information
     @Override
-    public void say(RemoteEventListener sender, String text) 
-            throws RemoteException {
+    public void say(RemoteEventListener sender, String text) throws RemoteException {
         if (text != null) {
             // Get sender's stable session ID
             String senderSessionId = null;
@@ -188,7 +171,7 @@ public class ChatServer
             } catch (RemoteException e) {
                 senderSessionId = "UNKNOWN";
             }
-            
+
             addMessage(sender, senderSessionId, text);
         }
     }
@@ -259,13 +242,7 @@ public class ChatServer
                 // uwara 2024-06 old code
                 // ChatNotification note = new ChatNotification(this, msg, msgCount);
                 // New code with sender info
-                ChatNotification note = new ChatNotification(
-                    this,
-                    msgPair.sender,
-                    msgPair.senderId,
-                    msgPair.text,
-                    msgCount
-                );
+                ChatNotification note = new ChatNotification(this, msgPair.sender, msgPair.senderId, msgPair.text, msgCount);
 
                 // Send it to all registered listeners.
                 synchronized (clients) {
@@ -316,10 +293,7 @@ public class ChatServer
                 continue;
             }
 
-            if (arg.equalsIgnoreCase("quit") ||
-                arg.equalsIgnoreCase("stop") ||
-                arg.equalsIgnoreCase("halt") ||
-                arg.equalsIgnoreCase("exit")) {
+            if (arg.equalsIgnoreCase("quit") || arg.equalsIgnoreCase("stop") || arg.equalsIgnoreCase("halt") || arg.equalsIgnoreCase("exit")) {
                 halted = true;
             } else if (arg.equalsIgnoreCase("help")) {
                 System.out.println("Available commands:");
@@ -339,9 +313,7 @@ public class ChatServer
      * This method implements the commandline help command.
      */
     protected static void usage() {
-        String[] msg = {
-            "Usage: {'?'|-h|-help}|[-n server-name]"
-        };
+        String[] msg = {"Usage: {'?'|-h|-help}|[-n server-name]"};
 
         for (String s : msg)
             System.out.println(s);
@@ -349,11 +321,7 @@ public class ChatServer
 
     // The ChatServer main program.
 
-    public static void main(String[] argv)
-        throws
-        IOException,
-        RemoteException,
-        UnknownHostException {
+    public static void main(String[] argv) throws IOException, RemoteException, UnknownHostException {
 
         String serverName = null;
         int state = 0;
@@ -363,10 +331,7 @@ public class ChatServer
             if (state == 0) {
                 if (av.equalsIgnoreCase("-n")) {
                     state = 1;
-                } else if (av.equals("?") ||
-                    av.equalsIgnoreCase("-h") ||
-                    av.equalsIgnoreCase("-help") ||
-                    av.equalsIgnoreCase("--help")) {
+                } else if (av.equals("?") || av.equalsIgnoreCase("-h") || av.equalsIgnoreCase("-help") || av.equalsIgnoreCase("--help")) {
                     usage();
                     return;
                 } else {
