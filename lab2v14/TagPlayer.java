@@ -60,10 +60,8 @@ public class TagPlayer implements PlayerInterface, Serializable {
     public synchronized boolean tag() {
         if (!isIt) {
             isIt = true;
-            // PROMINENT MESSAGE
             System.out.println("\n========================================");
-            System.out.println("*** PLAYER " + playerId + " HAS BEEN TAGGED! ***");
-            System.out.println("*** NOW " + playerId + " IS 'IT'! ***");
+            System.out.println("Player " + playerId + " is now IT player.");
             System.out.println("========================================\n");
             debugMsg("Got tagged! Now I'm IT");
             return true;
@@ -165,14 +163,13 @@ public class TagPlayer implements PlayerInterface, Serializable {
 
     protected void fleeBehavior(BailiffInterface currentBailiff) {
         try {
-            // Simple, direct query instead of scanning all bailiffs
             String itPlayerId = currentBailiff.getItPlayerId();
 
             if (itPlayerId != null && !itPlayerId.equals(playerId)) {
                 // The 'it' player is HERE! FLEE!
-                debugMsg("DANGER: IT player " + itPlayerId + " detected! FLEEING!");
-                System.out.println("\n⚠️  DANGER! Player " + playerId +
-                    " DETECTED IT PLAYER " + itPlayerId + "! FLEEING!\n");
+                debugMsg("IT player " + itPlayerId + " detected - ESCAPING!");
+                System.out.println("\nPlayer " + itPlayerId + " is IT player. Player " + playerId + " is fleeing.\n");
+
                 BailiffInterface safeBailiff = pickBailiff();
                 if (safeBailiff != null) {
                     safeBailiff.migrate(this, "topLevel", new Object[]{});
@@ -182,7 +179,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
 
             // If not threatened, occasionally move
             if (Math.random() > 0.7) {
-                debugMsg("Moving to another Bailiff");
+                debugMsg("Moving to another Bailiff for safety");
                 BailiffInterface nextBailiff = pickBailiff();
                 if (nextBailiff != null) {
                     nextBailiff.migrate(this, "topLevel", new Object[]{});
