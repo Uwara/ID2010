@@ -2,42 +2,41 @@
 // 2024-01-25/fki Reviewed for v14
 // 2018-08-16/fki Refactored for v13.
 
+import java.rmi.RemoteException;
+
 /**
  * This interface is for the Bailiff's clients. The clients are mobile
  * code which move into the Bailiff's JVM for execution.
  */
 public interface BailiffInterface extends java.rmi.Remote {
-    /**
-     * Returns a string which confirms communication with the Bailiff
-     * service instance.
-     */
-    public String ping() throws java.rmi.RemoteException;
 
-    /**
-     * Returns a property of the Bailiff.
-     *
-     * @param key The case-insensitive property key to retrieve.
-     * @return The property string or null.
-     */
-    public String getProperty(String key) throws java.rmi.RemoteException;
 
     /**
      * The entry point for mobile code.
      * The client sends and object (itself perhaps), a string
      * naming the callback method and an array of arguments which must
      * map against the parameters of the callback method.
-     *
-     * @param obj  The object (to execute).
-     * @param cb   The name of the method to call as the program of obj.
-     * @param args The parameters for the callback method. Note that if
-     *             the method has a signature without arguments the value of args
-     *             should be an empty array. Setting args to null will not work.
-     * @throws java.rmi.RemoteException        Thrown if there is an RMI problem.
-     * @throws java.lang.NoSuchMethodException Thrown if the proposed
-     *                                         callback is not found (which happen if the name is spelled wrong,
-     *                                         the number of arguments is wrong or are of the wrong type).
-     *
      */
     public void migrate(Object obj, String cb, Object[] args) throws java.rmi.RemoteException, java.lang.NoSuchMethodException;
+
+    /**
+     * Get a list of all player IDs currently in this Bailiff
+     * uwara - added on 12/2025
+     */
+    public String[] getPlayerList() throws java.rmi.RemoteException;
+
+    /**
+     * Get the ID of the player who is "it" on this Bailiff.
+     * Returns null if no player is "it" here.
+     * uwara - added on 12/2025
+     */
+    public String getItPlayerId() throws RemoteException;
+
+    /**
+     * Attempt to tag a player by their ID. Uses the Bailiff as a mediator
+     * to ensure the tag happens on the actual player object.
+     * uwara - added on 12/2025
+     */
+    public boolean tag(String playerId) throws java.rmi.RemoteException;
 
 }

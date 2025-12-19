@@ -98,7 +98,8 @@ public class Dexter implements Serializable {
      * @param msg The message to print.
      */
     protected void debugMsg(String msg) {
-        if (debug) System.out.printf("%s(%d):%s%n", id, jumpCount, msg);
+        if (debug)
+            System.out.printf("%s(%d):%s%n", id, jumpCount, msg);
     }
 
     /**
@@ -142,11 +143,13 @@ public class Dexter implements Serializable {
 
                     // If the name already is on the bad list, ignore it
 
-                    if (badNames.contains(name)) continue;
+                    if (badNames.contains(name))
+                        continue;
 
                     // If the name already is on the good list, ignore it
 
-                    if (goodNames.contains(name)) continue;
+                    if (goodNames.contains(name))
+                        continue;
 
                     // Else, optimistically add it to the good names
 
@@ -163,22 +166,24 @@ public class Dexter implements Serializable {
      * This is Dexter's main program once he is on his way. In short, he
      * goes into an infinite loop in which the only exit is a
      * successfull migrate to a Bailiff.
-     * <p>
+     *
      * for (;;) {
-     * <p>
-     * while no good Bailiffs are found
-     * look for Bailiffs
-     * <p>
-     * while good Bailiffs are known
-     * jump to a random Bailiff
-     * or
-     * update the lists of good and bad bailiffs
+     *
+     *   while no good Bailiffs are found
+     *     look for Bailiffs
+     *
+     *   while good Bailiffs are known
+     *     jump to a random Bailiff
+     *     or
+     *     update the lists of good and bad bailiffs
      * }
-     * <p>
+     *
      * Dexter has no concept of where he is, and may happily migrate to
      * the Bailiff he is already in.
      */
-    public void topLevel() throws java.io.IOException {
+    public void topLevel()
+        throws
+        java.io.IOException {
         jumpCount++;
 
         // Loop forever until we have successfully jumped to a Bailiff.
@@ -265,7 +270,8 @@ public class Dexter implements Serializable {
                                 debugMsg(rex.toString());
                                 badName = true;
                             }
-                        } else badName = true;
+                        } else
+                            badName = true;
                     } catch (Exception e) {
                         badName = true;
                     }
@@ -296,7 +302,14 @@ public class Dexter implements Serializable {
      * Prints commandline help.
      */
     private static void showUsage() {
-        String[] msg = {"Usage: {?,-h,-help}|[-debug][-id string][-rs ms][-qs ms]", "? -h -help   Show this text", "-debug       Enable trace and diagnostic messages", "-id  string  Set the id string printed by debug messages", "-rs  ms      Set the restraint sleep in milliseconds", "-qs  ms      Set the lookup query retry delay"};
+        String[] msg = {
+            "Usage: {?,-h,-help}|[-debug][-id string][-rs ms][-qs ms]",
+            "? -h -help   Show this text",
+            "-debug       Enable trace and diagnostic messages",
+            "-id  string  Set the id string printed by debug messages",
+            "-rs  ms      Set the restraint sleep in milliseconds",
+            "-qs  ms      Set the lookup query retry delay"
+        };
         for (String s : msg)
             System.out.println(s);
     }
@@ -306,7 +319,9 @@ public class Dexter implements Serializable {
     // first jump, Dexter always restarts in method topLevel.
     // =============================================================
 
-    public static void main(String[] argv) throws java.io.IOException, java.lang.ClassNotFoundException {
+    public static void main(String[] argv)
+        throws
+        java.io.IOException, java.lang.ClassNotFoundException {
 
         // Make a new Dexter and configure it from commandline arguments.
 
@@ -324,10 +339,14 @@ public class Dexter implements Serializable {
                     if (av.equals("?") || av.equals("-h") || av.equals("-help")) {
                         showUsage();
                         return;
-                    } else if (av.equals("-debug")) dx.setDebug(true);
-                    else if (av.equals("-id")) state = 1;
-                    else if (av.equals("-rs")) state = 2;
-                    else if (av.equals("-qs")) state = 3;
+                    } else if (av.equals("-debug"))
+                        dx.setDebug(true);
+                    else if (av.equals("-id"))
+                        state = 1;
+                    else if (av.equals("-rs"))
+                        state = 2;
+                    else if (av.equals("-qs"))
+                        state = 3;
                     else {
                         System.err.println("Unknown commandline argument: " + av);
                         return;
@@ -348,10 +367,10 @@ public class Dexter implements Serializable {
                     dx.setRetrySleep(Long.parseLong(av));
                     state = 0;
                     break;
-            }    // switch
-        }    // for all commandline arguments
+      }	// switch
+    }	// for all commandline arguments
 
-        dx.topLevel();        // Start the Dexter
+    dx.topLevel();		// Start the Dexter
 
-    } // main
+  } // main
 }
