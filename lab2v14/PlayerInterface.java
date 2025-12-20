@@ -1,7 +1,7 @@
 /**
- * uwara - added on 12/2025
+ * [uwara 2025-12-20] TAG game
  * PlayerInterface defines the contract for game players.
- * All players must implement this interface to participate in the TAG game.
+ * TagPlayer(or any player) must implement this interface to participate in the TAG game.
  */
 public interface PlayerInterface extends java.io.Serializable {
     /**

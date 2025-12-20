@@ -21,21 +21,21 @@ public interface BailiffInterface extends java.rmi.Remote {
 
     /**
      * Get a list of all player IDs currently in this Bailiff
-     * uwara - added on 12/2025
+     * [uwara 2025-12-20] TAG game
      */
     public String[] getPlayerList() throws java.rmi.RemoteException;
 
     /**
      * Get the ID of the player who is "it" on this Bailiff.
      * Returns null if no player is "it" here.
-     * uwara - added on 12/2025
+     * [uwara 2025-12-20]
      */
     public String getItPlayerId() throws RemoteException;
 
     /**
+     * [uwara 2025-12-20] TAG game
      * Attempt to tag a player by their ID. Uses the Bailiff as a mediator
      * to ensure the tag happens on the actual player object.
-     * uwara - added on 12/2025
      */
     public boolean tag(String playerId) throws java.rmi.RemoteException;
 

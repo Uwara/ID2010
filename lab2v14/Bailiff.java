@@ -5,14 +5,18 @@
 import java.net.InetAddress;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Bailiff extends java.rmi.server.UnicastRemoteObject implements BailiffInterface {
+public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
+    private static final long serialVersionUID = 1L;
+
     protected boolean debug = false;
     protected Logger log;
     protected String id = "";
@@ -22,7 +26,7 @@ public class Bailiff extends java.rmi.server.UnicastRemoteObject implements Bail
     protected InetAddress myInetAddress;
     protected String serviceName = null;
 
-    // [uwara] TAG game: track players on this Bailiff
+    // [uwara 2025-12-20] TAG game: track players on this Bailiff
     protected Map<String, PlayerInterface> players = Collections.synchronizedMap(new HashMap<>());
 
     protected void debugMsg(String s) {
@@ -53,6 +57,7 @@ public class Bailiff extends java.rmi.server.UnicastRemoteObject implements Bail
             setContextClassLoader(myObj.getClass().getClassLoader());
         }
 
+        @Override
         public void run() {
             try {
                 myMethod.invoke(myObj, myArgs);
@@ -60,58 +65,41 @@ public class Bailiff extends java.rmi.server.UnicastRemoteObject implements Bail
                 log.severe("Exception in " + myObj.getClass().getName() + ": " + t.toString());
                 t.printStackTrace();
             } finally {
-                // [uwara] TAG game: unregister player when done
-                if (myObj instanceof PlayerInterface) {
-                    PlayerInterface p = (PlayerInterface) myObj;
-                    players.remove(p.getId());
-                    System.out.println("Player " + p.getId() + " departed");
+                // [uwara 2025-12-20] TAG game: unregister player when done
+                if (myObj instanceof PlayerInterface player) {
+                    players.remove(player.getId());
+                    log.fine("Player " + player.getId() + " departed");
                 }
             }
         }
     }
 
-    public String ping() throws java.rmi.RemoteException {
-        log.fine("ping");
-        return String.format("Ping response from Bailiff %s on host %s [%s]",
-            id, myHostName, myInetAddress.getHostAddress());
-    }
-
-    public String getProperty(String key) {
-        log.fine(String.format("getProperty key=%s", key));
-        return propertyMap.get(key.toLowerCase());
-    }
-
-    public void setProperty(String key, String value) {
-        log.fine(String.format("setProperty key=%s value=%s", key, value));
-        propertyMap.put(key.toLowerCase(), value);
-    }
-
     public void migrate(Object obj, String cb, Object[] args)
-        throws java.rmi.RemoteException, NoSuchMethodException {
+        throws RemoteException, NoSuchMethodException {
 
-        // [uwara] TAG game: register player on arrival
-        if (obj instanceof PlayerInterface) {
-            PlayerInterface player = (PlayerInterface) obj;
+        // [uwara 2025-12-20] TAG game: register player on arrival
+        if (obj instanceof PlayerInterface player) {
             players.put(player.getId(), player);
-            System.out.println("Player " + player.getId() + " arrived");
+            log.info("Player %s arrived".formatted(player.getId()));
         }
 
-        log.fine(String.format("migrate obj=%s cb=%s args=%s",
-            obj.toString(), cb, Arrays.toString(args)));
+        log.fine(() -> "migrate obj=%s cb=%s args=%s".formatted(Objects.toString(obj), cb, Arrays.toString(args)));
 
-        Agitator agt = new Agitator(obj, cb, args);
-        agt.initialize();
-        agt.start();
+        Agitator agitator = new Agitator(obj, cb, args);
+        agitator.initialize();
+        agitator.start();
     }
 
-    // [uwara] TAG game: get list of players on this Bailiff
+    // [uwara 2025-12-20] TAG game: get list of players on this Bailiff
+    @Override
     public String[] getPlayerList() throws RemoteException {
         synchronized (players) {
             return players.keySet().toArray(new String[0]);
         }
     }
 
-    // [uwara] TAG game: get ID of player who is "it"
+    // [uwara 2025-12-20] TAG game: get ID of player who is "it"
+    @Override
     public String getItPlayerId() throws RemoteException {
         synchronized (players) {
             for (PlayerInterface p : players.values()) {
@@ -121,7 +109,8 @@ public class Bailiff extends java.rmi.server.UnicastRemoteObject implements Bail
         return null;
     }
 
-    // [uwara] TAG game: mediate tagging between players
+    // [uwara 2025-12-20] TAG game: mediate tagging between players
+    @Override
     public boolean tag(String playerId) throws RemoteException {
         PlayerInterface p = players.get(playerId);
         if (p != null) return p.tag();
@@ -129,7 +118,7 @@ public class Bailiff extends java.rmi.server.UnicastRemoteObject implements Bail
     }
 
     public Bailiff(String id, String info, Logger log)
-        throws java.rmi.RemoteException, java.net.UnknownHostException, java.io.IOException {
+        throws java.io.IOException, java.rmi.RemoteException {
 
         if (log != null) this.log = log;
         else throw new IllegalArgumentException("Logger is null");
@@ -206,7 +195,7 @@ public class Bailiff extends java.rmi.server.UnicastRemoteObject implements Bail
         }
     }
 
-    public static void main(String[] argv) throws java.net.UnknownHostException, java.rmi.RemoteException, java.io.IOException {
+    public static void main(String[] argv) throws  Exception {
 
         String id = null;
         String info = null;

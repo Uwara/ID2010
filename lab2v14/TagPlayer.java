@@ -7,9 +7,8 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 /**
- * TagPlayer is a mobile agent that participates in the TAG game.
+ * TagPlayer is a game agent that participates in the TAG game.
  * Players can be in one of two states: 'it' (hunter) or 'not it' (evader).
- * <p>
  * The 'it' player hunts other players to tag them.
  * Non-'it' players try to evade being tagged by moving to different Bailiffs.
  */
