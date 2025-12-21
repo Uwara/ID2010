@@ -354,7 +354,7 @@ PlayerA (in Bailiff1)   →  Calls bailiff.tag("C")
 
 ## Key Implementation Details
 
-### **PlayerInterface Requirements**
+### **PlayerInterface (New Code)**
 ```java
 public interface PlayerInterface extends Serializable {
     public String getId();
@@ -363,14 +363,14 @@ public interface PlayerInterface extends Serializable {
 }
 ```
 
-### **BailiffInterface Extensions**
+### **BailiffInterface New methods added**
 ```java
 public String[] getPlayerList() throws RemoteException;
 public String getItPlayerId() throws RemoteException;
 public boolean tag(String playerId) throws RemoteException;
 ```
 
-### **Critical: Thread Safety**
+### **Thread Safety**
 - Use `Collections.synchronizedMap()` for players HashMap
 - Use `synchronized` blocks when iterating over player lists
 - Use `synchronized` on TagPlayer's `tag()` method
