@@ -1,6 +1,7 @@
 // Bailiff.java
 // 2024-01-25/fki Refactored for v14 - No Jini, just rmiregistry
 // 2018-08-16/fki Refactored for v13
+// 2025-12-20 Fixed thread leak with ExecutorService
 
 import java.net.InetAddress;
 import java.rmi.Naming;
@@ -11,6 +12,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,51 +35,14 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
     // [uwara 2025-12-20] TAG game: track players on this Bailiff
     protected Map<String, PlayerInterface> players = Collections.synchronizedMap(new HashMap<>());
 
+    // [uwara 2025-12-20] Thread pool instead of unbounded thread creation
+    private transient ExecutorService executorService;
+    private static final int THREAD_POOL_SIZE = 20;
     protected void debugMsg(String s) {
         if (debug) System.out.println(s);
     }
 
-    private class Agitator extends Thread {
-        protected Object myObj;
-        protected String myCb;
-        protected Object[] myArgs;
-        protected java.lang.reflect.Method myMethod;
-        protected Class[] myParms;
-
-        public Agitator(Object obj, String cb, Object[] args) {
-            myObj = obj;
-            myCb = cb;
-            myArgs = args;
-            if (0 < args.length) {
-                myParms = new Class[args.length];
-                for (int i = 0; i < args.length; i++) myParms[i] = args[i].getClass();
-            } else {
-                myParms = null;
-            }
-        }
-
-        public void initialize() throws java.lang.NoSuchMethodException {
-            myMethod = myObj.getClass().getMethod(myCb, myParms);
-            setContextClassLoader(myObj.getClass().getClassLoader());
-        }
-
-        @Override
-        public void run() {
-            try {
-                myMethod.invoke(myObj, myArgs);
-            } catch (Throwable t) {
-                log.severe("Exception in " + myObj.getClass().getName() + ": " + t.toString());
-                t.printStackTrace();
-            } finally {
-                // [uwara 2025-12-20] TAG game: unregister player when done
-                if (myObj instanceof PlayerInterface player) {
-                    players.remove(player.getId());
-                    log.fine("Player " + player.getId() + " departed");
-                }
-            }
-        }
-    }
-
+    
     public void migrate(Object obj, String cb, Object[] args)
         throws RemoteException, NoSuchMethodException {
 
@@ -85,9 +54,13 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
 
         log.fine(() -> "migrate obj=%s cb=%s args=%s".formatted(Objects.toString(obj), cb, Arrays.toString(args)));
 
-        Agitator agitator = new Agitator(obj, cb, args);
+        //Agitator agitator = new Agitator(obj, cb, args);
+        Agitator agitator = new Agitator(obj, cb, args, players, log);
         agitator.initialize();
-        agitator.start();
+        
+        // [uwara 2025-12-20] Use thread pool instead of creating new thread
+        // JVM creashes under load due to thread leak, max peak reached 1600 threads
+        executorService.execute(agitator);
     }
 
     // [uwara 2025-12-20] TAG game: get list of players on this Bailiff
@@ -135,14 +108,47 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         propertyMap.put("hostname", myHostName);
         propertyMap.put("hostaddress", myInetAddress.getHostAddress());
 
-        log.info(String.format("STARTING id=%s info=%s host=%s debug=%b",
-            id, info, myHostName, debug));
+        // [FIX 2025-12-20] Initialize thread pool with named threads
+        ThreadFactory namedThreadFactory = new ThreadFactory() {
+            private final AtomicInteger threadNumber = new AtomicInteger(1);
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r, "Bailiff-" + id + "-Worker-" + threadNumber.getAndIncrement());
+                t.setDaemon(false); // Keep them as non-daemon to ensure work completes
+                return t;
+            }
+        };
+        this.executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE, namedThreadFactory);
+
+        log.info(String.format("STARTING id=%s info=%s host=%s debug=%b threadPool=%d",
+            id, info, myHostName, debug, THREAD_POOL_SIZE));
 
         serviceName = getClass().getName() + "." + id + "." +
             Integer.toString((int) (Math.random() * (float) 0x7FFF_FFFF));
 
         Naming.rebind("///" + serviceName, this);
         log.info(String.format("Registered as %s", serviceName));
+    }
+
+    // [FIX 2025-12-20] Proper shutdown method
+    public void shutdown() {
+        log.info("Shutting down Bailiff " + id);
+        unbind();
+        
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                log.warning("Executor did not terminate in time, forcing shutdown");
+                executorService.shutdownNow();
+                if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                    log.severe("Executor did not terminate");
+                }
+            }
+        } catch (InterruptedException e) {
+            log.warning("Shutdown interrupted, forcing shutdown");
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     protected void unbind() {
@@ -236,6 +242,11 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
 
         Logger log = Logger.getAnonymousLogger();
         log.setLevel(logLevel);
-        new Bailiff(id, info, log);
+        final Bailiff bailiff = new Bailiff(id, info, log);
+        
+        // [uwara 2025-12-20] Add graceful shutdown due to JVM issues
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            bailiff.shutdown();
+        }));
     }
 }

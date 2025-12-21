@@ -1,10 +1,10 @@
-import java.io.Serializable;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * TagPlayer is a game agent that participates in the TAG game.
@@ -12,7 +12,7 @@ import java.util.UUID;
  * The 'it' player hunts other players to tag them.
  * Non-'it' players try to evade being tagged by moving to different Bailiffs.
  */
-public class TagPlayer implements PlayerInterface, Serializable {
+public class TagPlayer implements PlayerInterface {
     private static final long serialVersionUID = 1L;
 
     // Player identification
@@ -20,7 +20,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
     private boolean isIt;
 
     // Game parameters
-    private long moveDelayMs = 3000; // 3 seconds base delay
+    private long moveDelayMs = 5000; // 5 seconds base delay
     private long randomVariationMs = 150; // 50-250ms variation
     private boolean debug = false;
     private int jumpCount = 0;
@@ -28,7 +28,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
     // RMI registry interaction (transient so not serialized)
     private transient ArrayList<String> goodBailiffs = new ArrayList<>();
     private transient ArrayList<String> badBailiffs = new ArrayList<>();
-    private transient long retrySleep = 5000; // 5 seconds between retries
+    private transient long retrySleep = 20000; // 20 seconds between retries
 
     /**
      * Create a new TagPlayer with auto-generated UUID.
@@ -98,7 +98,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
 
     protected void snooze(long ms) {
         try {
-            Thread.currentThread().sleep(ms);
+            TimeUnit.MILLISECONDS.sleep(ms); // Standard modern java practice
         } catch (InterruptedException e) {
             // Ignore
         }
@@ -178,7 +178,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
 
             // If not threatened, occasionally move
             if (Math.random() > 0.7) {
-                debugMsg("Moving to another Bailiff for safety");
+                debugMsg("Moving to another Bailiff occasionally.");
                 BailiffInterface nextBailiff = pickBailiff();
                 if (nextBailiff != null) {
                     nextBailiff.migrate(this, "topLevel", new Object[]{});
@@ -210,7 +210,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
                     }
                 }
             } else {
-                debugMsg("No victims here, need to find another Bailiff");
+                debugMsg("No players here,  another Bailiff");
             }
         } catch (RemoteException e) {
             debugMsg("Error during hunting: " + e.getMessage());
@@ -222,7 +222,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
     public void topLevel() throws RemoteException, NoSuchMethodException {
         jumpCount++;
 
-        // [uwara] Initialize transient fields - they become null after migration
+        // [uwara] Initialize Bailiff lists if null
         if (goodBailiffs == null) {
             goodBailiffs = new ArrayList<>();
         }
@@ -323,7 +323,7 @@ public class TagPlayer implements PlayerInterface, Serializable {
             }
         }
 
-        TagPlayer player = new TagPlayer(playerId);
+        final TagPlayer player = new TagPlayer(playerId);
         player.setDebug(debug);
         player.isIt = isIt;
 
