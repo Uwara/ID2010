@@ -118,7 +118,7 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r, "Bailiff-" + id + "-Worker-" + threadNumber.getAndIncrement());
-                t.setDaemon(false); // Keep them as non-daemon to ensure work completes
+                t.setDaemon(false);
                 return t;
             }
         };

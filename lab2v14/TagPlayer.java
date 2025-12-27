@@ -25,7 +25,7 @@ public class TagPlayer implements PlayerInterface {
     private boolean debug = false;
     private int jumpCount = 0;
 
-    // RMI registry interaction (transient so not serialized)
+    // RMI registry interaction (transient, not serialized)
     private transient ArrayList<String> goodBailiffs = new ArrayList<>();
     private transient ArrayList<String> badBailiffs = new ArrayList<>();
     private transient long retrySleep = 20000; // 20 seconds between retries
@@ -49,12 +49,12 @@ public class TagPlayer implements PlayerInterface {
 
     @Override
     public synchronized boolean tag() {
-        if (!isIt) {
+        if (!isIt) { // important to check else can be faulty tagging
             isIt = true;
             System.out.println("\n========================================");
-            System.out.println("Player " + playerId + " is now IT player.");
+            System.out.println("#### --------> Player " + playerId + " is now IT player.");
             System.out.println("========================================\n");
-            debugMsg("Got tagged! Now I'm IT");
+            debugMsg("Now I'm IT");
             return true;
         }
         debugMsg("Already IT, cannot be tagged");
@@ -66,7 +66,7 @@ public class TagPlayer implements PlayerInterface {
         return isIt;
     }
 
-    // ================ Configuration Methods ================
+    // Configs
 
     public void setDebug(boolean debug) {
         this.debug = debug;
@@ -80,7 +80,7 @@ public class TagPlayer implements PlayerInterface {
         this.randomVariationMs = Math.max(0, ms);
     }
 
-    // ================ Debug and Utility Methods ================
+    // ================ Debug and Utility
     protected void debugMsg(String msg) {
         if (debug) {
             System.out.printf("[%tT.%<tL] %s: %s%n", System.currentTimeMillis(), playerId, msg);
@@ -98,13 +98,13 @@ public class TagPlayer implements PlayerInterface {
     protected long getDelay() {
         long variation = (long) (Math.random() * randomVariationMs);
         if (isIt) {
-            // Give 'it' player shorter delay for hunting advantage
+            // Give 'it' player shorter delay for advantage
             return (moveDelayMs / 2) + variation;
         }
         return moveDelayMs + variation;
     }
 
-    // ================ Bailiff Discovery ================
+    // ================ Bailiff Discovery
 
     protected void scanForBailiffs() {
         try {
@@ -156,7 +156,7 @@ public class TagPlayer implements PlayerInterface {
             String itPlayerId = currentBailiff.getItPlayerId();
 
             if (itPlayerId != null && !itPlayerId.equals(playerId)) {
-                // The 'it' player is HERE! FLEE!
+
                 debugMsg("IT player " + itPlayerId + " detected - ESCAPING!");
                 System.out.println("\nPlayer " + itPlayerId + " is IT player. Player " + playerId + " is fleeing.\n");
 
@@ -167,7 +167,7 @@ public class TagPlayer implements PlayerInterface {
                 return;
             }
 
-            // If not threatened, occasionally move
+            // Occasionally move
             if (Math.random() > 0.7) {
                 debugMsg("Moving to another Bailiff occasionally.");
                 BailiffInterface nextBailiff = pickBailiff();
@@ -192,7 +192,7 @@ public class TagPlayer implements PlayerInterface {
                         if (success) {
                             isIt = false;
                             System.out.println("\n========================================");
-                            System.out.println("*** PLAYER " + playerId + " TAGGED " + victim + "! ***");
+                            System.out.println("*** PLAYER " + playerId + " TAGGED this" + victim + "! ***");
                             System.out.println("*** " + playerId + " IS NO LONGER 'IT'! ***");
                             System.out.println("========================================\n");
                             return;
@@ -200,7 +200,7 @@ public class TagPlayer implements PlayerInterface {
                     }
                 }
             } else {
-                debugMsg("No players here,  another Bailiff");
+                debugMsg("No players here, another Bailiff");
             }
         } catch (RemoteException e) {
             debugMsg("Error during hunting: " + e.getMessage());
@@ -223,11 +223,10 @@ public class TagPlayer implements PlayerInterface {
         debugMsg("Starting jump #" + jumpCount);
 
         for (; ; ) {
-            // Discover Bailiffs
             debugMsg("Scanning for Bailiffs...");
             scanForBailiffs();
 
-            // Keep trying until we have good Bailiffs
+            // Keep trying until good Bailiffs
             while (goodBailiffs.isEmpty()) {
                 scanForBailiffs();
                 if (goodBailiffs.isEmpty()) {
@@ -238,7 +237,7 @@ public class TagPlayer implements PlayerInterface {
 
             debugMsg("Found " + goodBailiffs.size() + " Bailiffs");
 
-            // Try to get a Bailiff and migrate
+            // get a Bailiff and migrate
             BailiffInterface bailiff = pickBailiff();
 
             if (bailiff != null) {
@@ -274,7 +273,6 @@ public class TagPlayer implements PlayerInterface {
         }
     }
 
-    // ================ Main Method ================
 
     public static void main(String[] argv) throws java.io.IOException, NoSuchMethodException {
         String playerId = null;
