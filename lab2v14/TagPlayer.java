@@ -81,16 +81,15 @@ public class TagPlayer implements PlayerInterface {
     }
 
     // ================ Debug and Utility Methods ================
-
     protected void debugMsg(String msg) {
         if (debug) {
-            System.out.printf("%s(%d): %s%n", playerId, jumpCount, msg);
+            System.out.printf("[%tT.%<tL] %s: %s%n", System.currentTimeMillis(), playerId, msg);
         }
     }
 
     protected void snooze(long ms) {
         try {
-            TimeUnit.MILLISECONDS.sleep(ms); // Standard modern java practice
+            TimeUnit.MILLISECONDS.sleep(ms);
         } catch (InterruptedException e) {
             // Ignore
         }
