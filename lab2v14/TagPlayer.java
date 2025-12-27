@@ -30,19 +30,11 @@ public class TagPlayer implements PlayerInterface {
     private transient ArrayList<String> badBailiffs = new ArrayList<>();
     private transient long retrySleep = 20000; // 20 seconds between retries
 
-    /**
-     * Create a new TagPlayer with auto-generated UUID.
-     */
     public TagPlayer() {
         this.playerId = UUID.randomUUID().toString().substring(0, 8);
         this.isIt = false;
     }
 
-    /**
-     * Create a TagPlayer with specified ID.
-     *
-     * @param id The player's unique identifier
-     */
     public TagPlayer(String id) {
         this.playerId = (id != null) ? id : UUID.randomUUID().toString().substring(0, 8);
         this.isIt = false;
@@ -200,7 +192,6 @@ public class TagPlayer implements PlayerInterface {
                         boolean success = currentBailiff.tag(victim);
                         if (success) {
                             isIt = false;
-                            // PROMINENT MESSAGE - User explicitly wants this
                             System.out.println("\n========================================");
                             System.out.println("*** PLAYER " + playerId + " TAGGED " + victim + "! ***");
                             System.out.println("*** " + playerId + " IS NO LONGER 'IT'! ***");

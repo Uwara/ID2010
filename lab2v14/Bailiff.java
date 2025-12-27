@@ -102,6 +102,10 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         myInetAddress = java.net.InetAddress.getLocalHost();
         myHostName = myInetAddress.getHostName().toLowerCase();
 
+        String hostAddress = myInetAddress.getHostAddress();
+        System.setProperty("java.rmi.server.hostname", hostAddress);
+        log.info("Setting RMI hostname to: " + hostAddress);
+
         propertyMap = Collections.synchronizedMap(new HashMap<String, String>());
         propertyMap.put("id", id);
         propertyMap.put("info", info);
