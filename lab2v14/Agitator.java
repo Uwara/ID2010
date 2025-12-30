@@ -2,7 +2,7 @@
 import java.util.Map;
 import java.util.logging.Logger;
 
-// [uwara 2025-12-20] Changed from Thread to Runnable for executor
+// uwara Changed from Thread to Runnable for executor
 class Agitator implements Runnable {
     protected Object myObj;
     protected String myCb;
@@ -47,7 +47,7 @@ class Agitator implements Runnable {
                       ": " + t.toString());
             t.printStackTrace();
         } finally {
-            // [uwara 2025-12-20] Unregister player when done
+            // uwara Unregister player when done
             if (myObj instanceof PlayerInterface player) {
                 players.remove(player.getId());
                 log.fine("Player " + player.getId() + " left this Bailiff");

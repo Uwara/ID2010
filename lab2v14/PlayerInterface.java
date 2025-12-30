@@ -1,5 +1,5 @@
 /**
- * [uwara 2025-12-20] TAG game
+ * uwara  TAG game
  * PlayerInterface defines the contract for game players.
  * TagPlayer(or any player) must implement this interface to participate in the TAG game.
  */

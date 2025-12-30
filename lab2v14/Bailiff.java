@@ -32,10 +32,10 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
     protected InetAddress myInetAddress;
     protected String serviceName = null;
 
-    // [uwara 2025-12-20] TAG game: track players on this Bailiff
+    // uwara TAG game: track players on this Bailiff
     protected Map<String, PlayerInterface> players = Collections.synchronizedMap(new HashMap<>());
 
-    // [uwara 2025-12-20] Thread pool instead of unbounded thread creation
+    // uwara Thread pool instead of unbounded thread creation
     private transient ExecutorService executorService;
     private static final int THREAD_POOL_SIZE = 20;
     protected void debugMsg(String s) {
@@ -46,7 +46,7 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
     public void migrate(Object obj, String cb, Object[] args)
         throws RemoteException, NoSuchMethodException {
 
-        // [uwara 2025-12-20] TAG game: register player on arrival
+        // uwara TAG game: register player on arrival
         if (obj instanceof PlayerInterface player) {
             players.put(player.getId(), player);
             log.info("Player %s arrived".formatted(player.getId()));
@@ -58,12 +58,12 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         Agitator agitator = new Agitator(obj, cb, args, players, log);
         agitator.initialize();
         
-        // [uwara 2025-12-20] Use thread pool instead of creating new thread
+        // uwara Use thread pool instead of creating new thread
         // JVM creashes under load due to thread leak, max peak reached 1600 threads
         executorService.execute(agitator);
     }
 
-    // [uwara 2025-12-20] TAG game: get list of players on this Bailiff
+    // uwara  TAG game: get list of players on this Bailiff
     @Override
     public String[] getPlayerList() throws RemoteException {
         synchronized (players) {
@@ -71,7 +71,7 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         }
     }
 
-    // [uwara 2025-12-20] TAG game: get ID of player who is "it"
+    // uwara  TAG game: get ID of player who is "it"
     @Override
     public String getItPlayerId() throws RemoteException {
         synchronized (players) {
@@ -82,7 +82,7 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         return null;
     }
 
-    // [uwara 2025-12-20] TAG game: mediate tagging between players
+    // uwara TAG game: mediate tagging between players
     @Override
     public boolean tag(String playerId) throws RemoteException {
         PlayerInterface p = players.get(playerId);
@@ -108,13 +108,13 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         propertyMap.put("hostname", myHostName);
         propertyMap.put("hostaddress", myInetAddress.getHostAddress());
 
-        // [FIX 2025-12-20] Initialize thread pool with named threads
+        // FIX  Initialize thread pool with named threads
         ThreadFactory namedThreadFactory = new ThreadFactory() {
             private final AtomicInteger threadNumber = new AtomicInteger(1);
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r, "Bailiff-" + id + "-Worker-" + threadNumber.getAndIncrement());
-                t.setDaemon(false); // Keep them as non-daemon to ensure work completes
+                t.setDaemon(false);
                 return t;
             }
         };
@@ -130,7 +130,7 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         log.info(String.format("Registered as %s", serviceName));
     }
 
-    // [FIX 2025-12-20] Proper shutdown method
+    // FIX Proper shutdown method
     public void shutdown() {
         log.info("Shutting down Bailiff " + id);
         unbind();
@@ -244,7 +244,7 @@ public class Bailiff extends UnicastRemoteObject implements BailiffInterface {
         log.setLevel(logLevel);
         final Bailiff bailiff = new Bailiff(id, info, log);
         
-        // [uwara 2025-12-20] Add graceful shutdown due to JVM issues
+        // uwara  Add graceful shutdown due to JVM issues
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             bailiff.shutdown();
         }));
